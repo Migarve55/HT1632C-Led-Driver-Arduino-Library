@@ -29,30 +29,70 @@ void HTDriver::begin()
 	pinMode(_pin_di, OUTPUT);
 	pinMode(_pin_clk, OUTPUT);
 	pinMode(_pin_st, OUTPUT);
+	clear();
 }
 
 //Drawing methods
 
-void HTDriver::setPixel(short x, short y, short state) {
-	_matrix[y] &= state << x;
+void HTDriver::setPixel(short x, short y, unsigned char state) {
+	unsigned int number;
+	if (x < 8) {
+		number = _matrix[15 - y];
+		_matrix[15 - y] ^= (-state ^ number) & (1 << (7 - x));
+	} else {
+		number = _matrix[31 - y];
+		_matrix[31 - y] ^= (-state ^ number) & (1 << (15 - x));
+	}
 }
 
-void HTDriver::setRow(short row, unsigned int values) {
-	_matrix[row] = values;
-}
-
-void HTDriver::setMatrix(unsigned int matrix[16]) {
-	_matrix = matrix;
+void HTDriver::setMatrix(unsigned char matrix[16][16]) {
+	for(int i = 0; i < 16; i++){
+		for(int j = 0; j < 16; j++){
+			setPixel(i, j, matrix[i][j]);
+		}
+	}
 }
 
 void HTDriver::update() {
-	
+  for(int i = 0;i < 16;i++)
+  {
+    digitalWrite(_pin_oe, HIGH);   
+    sendData(_matrix[i+16]);
+    sendData(_matrix[i]);
+    digitalWrite(_pin_st, HIGH);          
+    delayMicroseconds(1);
+    digitalWrite(_pin_st, LOW);
+    delayMicroseconds(1);
+    setDatalineWord(i);             
+    digitalWrite(_pin_oe, LOW);
+    delayMicroseconds(100);   
+  } 
+}
+
+void HTDriver::clear() {
+	for(int i = 0; i < 16; i++){
+		for(int j = 0; j < 16; j++){
+			setPixel(i, j, LOW);
+		}
+	}
 }
 
 //Auxiliar
 
 void HTDriver::sendData(unsigned int data) {
-	
+  digitalWrite(_pin_clk, LOW);
+  delayMicroseconds(1);; 
+  digitalWrite(_pin_st, LOW);
+  delayMicroseconds(1);
+  for(int i = 0 ; i < 8 ; i++ )
+  {
+    digitalWrite(_pin_di, !(data & (1 << i)));  
+    delayMicroseconds(1);
+    digitalWrite(_pin_clk, HIGH);         
+    delayMicroseconds(1);
+    digitalWrite(_pin_clk, LOW);
+    delayMicroseconds(1);   
+  }     
 }
 
 void HTDriver::setDatalineWord(unsigned int word) { 
