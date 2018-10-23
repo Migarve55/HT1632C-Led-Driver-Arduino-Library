@@ -70,11 +70,9 @@ void HTDriver::update() {
 }
 
 void HTDriver::clear() {
-	for(int i = 0; i < 16; i++){
-		for(int j = 0; j < 16; j++){
-			setPixel(i, j, LOW);
-		}
-	}
+	for(int i = 0; i < 32; i++){
+		_matrix[i] = 0;
+	} 
 }
 
 //Auxiliar
